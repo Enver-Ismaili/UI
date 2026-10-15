@@ -1,0 +1,175 @@
+@if (loading) {
+  <div class="card space-y-4 p-6">
+    <div class="h-8 w-48 animate-pulse rounded-xl bg-slate-100"></div>
+    <div class="h-24 animate-pulse rounded-xl bg-slate-100"></div>
+    <div class="h-40 animate-pulse rounded-xl bg-slate-100"></div>
+  </div>
+} @else if (!ticket) {
+  <div class="card px-6 py-12 text-center">
+    <p class="text-base font-medium text-slate-800">Ticket not found</p>
+    <a routerLink="/tickets" class="btn-secondary mt-4">Back to tickets</a>
+  </div>
+} @else {
+  <div class="space-y-6">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <a routerLink="/tickets" class="text-sm font-medium text-brand-700 hover:underline">← All tickets</a>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+          <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ ticket.reference }}</h1>
+          <app-status-badge [status]="ticket.status" />
+          <app-priority-badge [priority]="ticket.priority" />
+          @if (ticket.isOverdue) {
+            <span class="inline-flex rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700">Overdue</span>
+          }
+        </div>
+        <p class="mt-2 text-lg text-slate-700">{{ ticket.title }}</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a class="btn-secondary" [routerLink]="['/tickets', ticket.id, 'edit']" [class.pointer-events-none]="isClosed" [class.opacity-50]="isClosed">Edit</a>
+        <button type="button" class="btn-danger" [disabled]="isClosed || saving" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+
+    @if (errorMessage) {
+      <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ errorMessage }}</div>
+    }
+    @if (successMessage) {
+      <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ successMessage }}</div>
+    }
+    @if (isClosed) {
+      <div class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-600">
+        This ticket is closed and read-only.
+      </div>
+    }
+
+    <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div class="space-y-6">
+        <section class="card p-5">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Details</h2>
+          <dl class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Customer</dt>
+              <dd class="mt-1 text-sm text-slate-800">{{ ticket.customerName }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Email</dt>
+              <dd class="mt-1 text-sm text-slate-800">{{ ticket.customerEmail }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Assigned agent</dt>
+              <dd class="mt-1 text-sm text-slate-800">{{ ticket.agentName || 'Unassigned' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Due date</dt>
+              <dd class="mt-1 text-sm"><app-due-date [dueAt]="ticket.dueAt" [isOverdue]="ticket.isOverdue" /></dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Created</dt>
+              <dd class="mt-1 text-sm text-slate-800">{{ ticket.createdAt | date: 'medium' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Last modified</dt>
+              <dd class="mt-1 text-sm text-slate-800">{{ ticket.lastModifiedAt | date: 'medium' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Resolved</dt>
+              <dd class="mt-1 text-sm text-slate-800">{{ ticket.resolvedAt ? (ticket.resolvedAt | date: 'medium') : '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Closed</dt>
+              <dd class="mt-1 text-sm text-slate-800">{{ ticket.closedAt ? (ticket.closedAt | date: 'medium') : '—' }}</dd>
+            </div>
+          </dl>
+          <div class="mt-5 border-t border-slate-100 pt-4">
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Description</h3>
+            <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{{ ticket.description }}</p>
+          </div>
+        </section>
+
+        <section class="card p-5">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Comments</h2>
+          <div class="mt-4 space-y-4">
+            @if (ticket.comments.length === 0) {
+              <p class="text-sm text-slate-500">No comments yet.</p>
+            } @else {
+              @for (comment of ticket.comments; track comment.id) {
+                <article class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-slate-800">{{ comment.authorName }}</p>
+                    <time class="text-xs text-slate-400">{{ comment.createdAt | date: 'medium' }}</time>
+                  </div>
+                  <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{{ comment.body }}</p>
+                </article>
+              }
+            }
+          </div>
+
+          <form class="mt-6 space-y-3 border-t border-slate-100 pt-4" [formGroup]="commentForm" (ngSubmit)="addComment()">
+            <div>
+              <label class="label" for="authorName">Author</label>
+              <input id="authorName" class="input" formControlName="authorName" />
+              @if (commentForm.controls.authorName.touched && commentForm.controls.authorName.invalid) {
+                <p class="mt-1 text-xs text-rose-600">Author name is required.</p>
+              }
+            </div>
+            <div>
+              <label class="label" for="body">Comment</label>
+              <textarea id="body" rows="4" class="input" formControlName="body"></textarea>
+              @if (commentForm.controls.body.touched && commentForm.controls.body.invalid) {
+                <p class="mt-1 text-xs text-rose-600">Comment body is required.</p>
+              }
+            </div>
+            <button type="submit" class="btn-primary" [disabled]="isClosed || saving">Add comment</button>
+          </form>
+        </section>
+      </div>
+
+      <div class="space-y-6">
+        <section class="card p-5">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Status</h2>
+          <p class="mt-2 text-sm text-slate-600">Current: {{ statusLabel(ticket.status) }}</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            @if (ticket.allowedStatusTargets.length === 0) {
+              <p class="text-sm text-slate-500">No further transitions are available.</p>
+            } @else {
+              @for (target of ticket.allowedStatusTargets; track target) {
+                <button type="button" class="btn-secondary" [disabled]="isClosed || saving" (click)="changeStatus(target)">
+                  Move to {{ statusLabel(target) }}
+                </button>
+              }
+            }
+          </div>
+        </section>
+
+        <section class="card p-5">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Assignment</h2>
+          <form class="mt-4 space-y-3" [formGroup]="assignForm" (ngSubmit)="saveAssignment()">
+            <div>
+              <label class="label" for="agentId">Active agent</label>
+              <select id="agentId" class="input" formControlName="agentId">
+                <option value="">Unassigned</option>
+                @for (agent of activeAgents; track agent.id) {
+                  <option [value]="agent.id">{{ agent.fullName }} · {{ agent.department }}</option>
+                }
+              </select>
+            </div>
+            <button type="submit" class="btn-primary" [disabled]="isClosed || saving">Save assignment</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showDeleteConfirm) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+    <div class="card w-full max-w-md p-6">
+      <h2 class="text-lg font-semibold text-slate-900">Delete ticket?</h2>
+      <p class="mt-2 text-sm text-slate-600">This permanently removes the ticket and its comments.</p>
+      <div class="mt-6 flex justify-end gap-2">
+        <button type="button" class="btn-secondary" (click)="cancelDelete()">Cancel</button>
+        <button type="button" class="btn-danger" [disabled]="saving" (click)="deleteTicket()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,74 @@
+<div class="mx-auto max-w-3xl space-y-6">
+  <div>
+    <a routerLink="/tickets" class="text-sm font-medium text-brand-700 hover:underline">← All tickets</a>
+    <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+      {{ isEdit ? 'Edit ticket' : 'Create ticket' }}
+    </h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Due date, reference, and timestamps are calculated by the API.
+    </p>
+  </div>
+
+  @if (errorMessage) {
+    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ errorMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="card space-y-3 p-6">
+      <div class="h-10 animate-pulse rounded-xl bg-slate-100"></div>
+      <div class="h-24 animate-pulse rounded-xl bg-slate-100"></div>
+      <div class="h-10 animate-pulse rounded-xl bg-slate-100"></div>
+    </div>
+  } @else {
+    <form class="card space-y-4 p-6" [formGroup]="form" (ngSubmit)="submit()">
+      <div>
+        <label class="label" for="title">Title</label>
+        <input id="title" class="input" formControlName="title" />
+        @if (controlError('title'); as message) {
+          <p class="mt-1 text-xs text-rose-600">{{ message }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="label" for="description">Description</label>
+        <textarea id="description" rows="6" class="input" formControlName="description"></textarea>
+        @if (controlError('description'); as message) {
+          <p class="mt-1 text-xs text-rose-600">{{ message }}</p>
+        }
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label" for="customerName">Customer name</label>
+          <input id="customerName" class="input" formControlName="customerName" />
+          @if (controlError('customerName'); as message) {
+            <p class="mt-1 text-xs text-rose-600">{{ message }}</p>
+          }
+        </div>
+        <div>
+          <label class="label" for="customerEmail">Customer email</label>
+          <input id="customerEmail" type="email" class="input" formControlName="customerEmail" />
+          @if (controlError('customerEmail'); as message) {
+            <p class="mt-1 text-xs text-rose-600">{{ message }}</p>
+          }
+        </div>
+      </div>
+
+      <div>
+        <label class="label" for="priority">Priority</label>
+        <select id="priority" class="input" formControlName="priority">
+          @for (priority of priorities; track priority) {
+            <option [value]="priority">{{ priority }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <a routerLink="/tickets" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" [disabled]="saving">
+          {{ isEdit ? 'Save changes' : 'Create ticket' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

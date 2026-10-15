@@ -1,0 +1,119 @@
+<div class="space-y-6">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Tickets</h1>
+      <p class="mt-1 text-sm text-slate-500">Search, filter, and track customer issues end to end.</p>
+    </div>
+    <a routerLink="/tickets/new" class="btn-primary">New ticket</a>
+  </div>
+
+  <div class="card p-4">
+    <form class="grid gap-3 md:grid-cols-2 xl:grid-cols-6" [formGroup]="filters">
+      <div class="xl:col-span-2">
+        <label class="label" for="search">Search</label>
+        <input id="search" class="input" formControlName="search" placeholder="Reference, title, or customer" />
+      </div>
+      <div>
+        <label class="label" for="status">Status</label>
+        <select id="status" class="input" formControlName="status">
+          <option value="">All</option>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ status === 'InProgress' ? 'In Progress' : status }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="label" for="priority">Priority</label>
+        <select id="priority" class="input" formControlName="priority">
+          <option value="">All</option>
+          @for (priority of priorities; track priority) {
+            <option [value]="priority">{{ priority }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="label" for="agentId">Agent</label>
+        <select id="agentId" class="input" formControlName="agentId">
+          <option value="">All</option>
+          @for (agent of agents; track agent.id) {
+            <option [value]="agent.id">{{ agent.fullName }}</option>
+          }
+        </select>
+      </div>
+      <div class="flex items-end justify-between gap-3">
+        <label class="flex items-center gap-2 pb-2 text-sm text-slate-700">
+          <input type="checkbox" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" formControlName="overdueOnly" />
+          Overdue only
+        </label>
+        <button type="button" class="btn-secondary" (click)="clearFilters()">Reset</button>
+      </div>
+    </form>
+  </div>
+
+  @if (errorMessage) {
+    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ errorMessage }}</div>
+  }
+
+  <div class="card overflow-hidden">
+    @if (loading) {
+      <div class="space-y-3 p-6">
+        @for (row of [1, 2, 3, 4, 5]; track row) {
+          <div class="h-12 animate-pulse rounded-xl bg-slate-100"></div>
+        }
+      </div>
+    } @else if (items.length === 0) {
+      <div class="px-6 py-16 text-center">
+        <p class="text-base font-medium text-slate-800">No tickets match these filters</p>
+        <p class="mt-1 text-sm text-slate-500">Try clearing search or creating a new ticket.</p>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead class="border-b border-slate-200 bg-slate-50/80 text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-4 py-3 font-medium">Reference</th>
+              <th class="px-4 py-3 font-medium">Title</th>
+              <th class="px-4 py-3 font-medium">Customer</th>
+              <th class="px-4 py-3 font-medium">Priority</th>
+              <th class="px-4 py-3 font-medium">Status</th>
+              <th class="px-4 py-3 font-medium">Agent</th>
+              <th class="px-4 py-3 font-medium">Due</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ticket of items; track ticket.id) {
+              <tr
+                class="border-b border-slate-100 transition hover:bg-slate-50/80"
+                [ngClass]="ticket.isOverdue ? 'border-l-4 border-l-rose-500 bg-rose-50/40' : 'border-l-4 border-l-transparent'"
+              >
+                <td class="px-4 py-3">
+                  <a class="font-medium text-brand-700 hover:underline" [routerLink]="['/tickets', ticket.id]">
+                    {{ ticket.reference }}
+                  </a>
+                  @if (ticket.isOverdue) {
+                    <span class="ml-2 inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700">Overdue</span>
+                  }
+                </td>
+                <td class="px-4 py-3 text-slate-800">{{ ticket.title }}</td>
+                <td class="px-4 py-3 text-slate-600">{{ ticket.customerName }}</td>
+                <td class="px-4 py-3"><app-priority-badge [priority]="ticket.priority" /></td>
+                <td class="px-4 py-3"><app-status-badge [status]="ticket.status" /></td>
+                <td class="px-4 py-3 text-slate-600">{{ ticket.agentName || 'Unassigned' }}</td>
+                <td class="px-4 py-3"><app-due-date [dueAt]="ticket.dueAt" [isOverdue]="ticket.isOverdue" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
+        <span>{{ totalCount }} ticket{{ totalCount === 1 ? '' : 's' }}</span>
+        <div class="flex items-center gap-2">
+          <button type="button" class="btn-secondary" [disabled]="page <= 1" (click)="goToPage(page - 1)">Previous</button>
+          <span>Page {{ page }} of {{ totalPages }}</span>
+          <button type="button" class="btn-secondary" [disabled]="page >= totalPages" (click)="goToPage(page + 1)">Next</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

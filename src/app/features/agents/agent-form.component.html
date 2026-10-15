@@ -1,0 +1,64 @@
+<div class="mx-auto max-w-2xl space-y-6">
+  <div>
+    <a routerLink="/agents" class="text-sm font-medium text-brand-700 hover:underline">← All agents</a>
+    <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+      {{ isEdit ? 'Edit agent' : 'Create agent' }}
+    </h1>
+    <p class="mt-1 text-sm text-slate-500">
+      {{ isEdit ? 'Update profile details. Use Activate / Deactivate on the list for status.' : 'Add a support team member.' }}
+    </p>
+  </div>
+
+  @if (errorMessage) {
+    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ errorMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="card space-y-3 p-6">
+      <div class="h-10 animate-pulse rounded-xl bg-slate-100"></div>
+      <div class="h-10 animate-pulse rounded-xl bg-slate-100"></div>
+      <div class="h-10 animate-pulse rounded-xl bg-slate-100"></div>
+    </div>
+  } @else {
+    <form class="card space-y-4 p-6" [formGroup]="form" (ngSubmit)="submit()">
+      <div>
+        <label class="label" for="fullName">Full name</label>
+        <input id="fullName" class="input" formControlName="fullName" />
+        @if (controlError('fullName'); as message) {
+          <p class="mt-1 text-xs text-rose-600">{{ message }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="label" for="email">Email</label>
+        <input id="email" type="email" class="input" formControlName="email" />
+        @if (controlError('email'); as message) {
+          <p class="mt-1 text-xs text-rose-600">{{ message }}</p>
+        }
+      </div>
+
+      <div>
+        <label class="label" for="department">Department</label>
+        <select id="department" class="input" formControlName="department">
+          @for (department of departments; track department) {
+            <option [value]="department">{{ department }}</option>
+          }
+        </select>
+      </div>
+
+      @if (!isEdit) {
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" formControlName="isActive" />
+          Active on create
+        </label>
+      }
+
+      <div class="flex justify-end gap-2 pt-2">
+        <a routerLink="/agents" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" [disabled]="saving">
+          {{ isEdit ? 'Save changes' : 'Create agent' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>
